@@ -1,0 +1,322 @@
+```
+
+Below is a single, self-contained “ground-up” plan for ThreadSpace.  
+
+It is written as a **hierarchical task tree**: every leaf is a concrete, bite-sized ticket you can drop into your issue tracker (GitHub Projects, Linear, Jira, etc.).  
+
+Dependencies are encoded via indentation → a task is **blocked** by all its children.  
+
+A single developer can move from zero to “I’m talking to my own ThreadSpace alpha” in ~8 weeks; add one designer + one dev-ops and you’ll ship faster and prettier.
+
+  
+
+────────────────────────
+
+LEVEL 0 — Meta
+
+────────────────────────
+
+0.0  Repo & conventions  
+
+0.0.1  Create monorepo (`threadspace/`)  
+
+0.0.2  Adopt Conventional Commits + trunk-based dev  
+
+0.0.3  Nix flake for reproducible builds (Rust, Node, SQL tools)  
+
+0.0.4  GitHub Actions CI matrix: Ubuntu, macOS, Windows, iOS, Android
+
+  
+
+────────────────────────
+
+LEVEL 1 — Core Contracts & Schemas
+
+────────────────────────
+
+1.0  Cap’n Proto schema repo (`schemas/`)  
+
+1.0.1  Define base message types (Envelope, Capability, MemoryPointer)  
+
+1.0.2  Agent manifest (permissions + metadata)  
+
+1.0.3  Memory fabric record spec  
+
+1.0.4  Codex node & edge spec  
+
+1.0.5  Generate Rust & TypeScript bindings
+
+  
+
+────────────────────────
+
+LEVEL 2 — Secure Memory Fabric
+
+────────────────────────
+
+2.0  Memory subsystem (`crates/memory/`)  
+
+2.0.1  Append-only log (WORM) implementation  
+
+2.0.2  Device key manager (age encryption)  
+
+2.0.3  Vector index (Qdrant or HNSW in Rust)  
+
+2.0.4  Migration framework (schema evolution)  
+
+2.0.5  Unit tests with proptest + cargo-fuzz
+
+  
+
+────────────────────────
+
+LEVEL 3 — WASM Agent Runtime
+
+────────────────────────
+
+3.0  Runtime host (`crates/runtime/`)  
+
+3.0.1  Integrate wasmtime  
+
+3.0.2  Capability-based sandbox (Warden)  
+
+3.0.3  Agent lifecycle (load, suspend, kill, restart)  
+
+3.0.4  Host-provided WASI extensions (fs limited to sandbox)  
+
+3.0.5  Example “ping” agent written in Rust → WASM
+
+  
+
+────────────────────────
+
+LEVEL 4 — Identity & Sync
+
+────────────────────────
+
+4.0  Identity crate (`crates/identity/`)  
+
+4.0.1  Ed25519 device key generation  
+
+4.0.2  Backup seed phrase (BIP-39)  
+
+4.0.3  Optional cloud relay (double-ratchet + MLS)  
+
+4.0.4  “Pair new device” flow CLI prototype
+
+  
+
+────────────────────────
+
+LEVEL 5 — Core Agents
+
+────────────────────────
+
+5.0  Loom agent (`agents/loom/`)  
+
+5.0.1  Memory index writer/reader  
+
+5.0.2  Semantic search API (embed via fasttext or openai local)  
+
+5.0.3  Unit tests (round-trip memories)
+
+  
+
+5.1  Scribe agent (`agents/scribe/`)  
+
+5.1.1  Listen to all user messages  
+
+5.1.2  Summarization prompt chain (local LLM via llama.cpp)  
+
+5.1.3  Emit “memory_chunk” events
+
+  
+
+5.2  Weaver agent (`agents/weaver/`)  
+
+5.2.1  Graph CRUD (Codex)  
+
+5.2.2  Merge incoming summaries into nodes/edges  
+
+5.2.3  Conflict-free merges (CRDT or Git-like DAG)
+
+  
+
+5.3  Oracle agent (`agents/oracle/`)  
+
+5.3.1  Snapshot Codex to temp branch  
+
+5.3.2  Tiny Monte-Carlo sim (goal: “what happens in 7 days if I do X?”)  
+
+5.3.3  Report back as Codex annotations
+
+  
+
+────────────────────────
+
+LEVEL 6 — UI Shell (Tauri)
+
+────────────────────────
+
+6.0  Desktop app (`apps/desktop/`)  
+
+6.0.1  Tauri init  
+
+6.0.2  Rust backend exposes `invoke("query")`, `invoke("agent_action")`  
+
+6.0.3  SvelteKit scaffold  
+
+6.0.4  Tailwind + daisyUI for fast styling  
+
+6.0.5  Responsive layout skeleton (sidebar + main view)
+
+  
+
+6.1  Chat surface  
+
+6.1.1  Message list component  
+
+6.1.2  Composer with slash-commands  
+
+6.1.3  Typing indicator streamed from Scribe
+
+  
+
+6.2  Memory browser  
+
+6.2.1  Semantic search UI (debounced input)  
+
+6.2.2  Infinite scroll of results  
+
+6.2.3  Detail modal with full provenance
+
+  
+
+6.3  Codex 3-D graph (optional)  
+
+6.3.1  Svelte-cubed or TresJS scene  
+
+6.3.2  Click-to-zoom, hover tooltip  
+
+6.3.3  Drag nodes to edit relationships
+
+  
+
+────────────────────────
+
+LEVEL 7 — Mobile & PWA
+
+────────────────────────
+
+7.0  Capacitor PWA (`apps/pwa/`)  
+
+7.0.1  Same SvelteKit → Vite build  
+
+7.0.2  Capacitor plugins: filesystem, secure-storage  
+
+7.0.3  iOS & Android signing configs  
+
+7.0.4  Push notification stub (optional)
+
+  
+
+────────────────────────
+
+LEVEL 8 — Packaging & Distribution
+
+────────────────────────
+
+8.0  Release automation  
+
+8.0.1  cargo-dist for binaries  
+
+8.0.2  Tauri updater (signed DMG, .deb, .msi)  
+
+8.0.3  App Store & Play Store scripts (Fastlane)  
+
+8.0.4  Homebrew tap for CLI tools
+
+  
+
+────────────────────────
+
+LEVEL 9 — Dog-food & Polish
+
+────────────────────────
+
+9.0  Internal alpha  
+
+9.0.1  3-person usage diary (Notion template)  
+
+9.0.2  Telemetry (opt-in, local-only)  
+
+9.0.3  Bug bash day  
+
+9.0.4  Performance flamegraph + LLM off-load tuning
+
+  
+
+────────────────────────
+
+LEVEL 10 — Community & Docs
+
+────────────────────────
+
+10.0  Docs site (`docs/`)  
+
+10.0.1  mdBook + Mermaid diagrams  
+
+10.0.2  “Writing your first agent” tutorial  
+
+10.0.3  Contributor covenant + security policy  
+
+10.0.4  Discord + Matrix bridges
+
+  
+
+────────────────────────
+
+Quick-Start CLI (single command)
+
+────────────────────────
+
+After the repo is live, contributors can:
+
+  
+
+```
+
+nix develop
+
+just dev         # starts hot-reload desktop
+
+just agent-new   # scaffolds new agent
+
+```
+
+  
+
+────────────────────────
+
+Timeline Snapshot
+
+────────────────────────
+
+Week 0-1  Levels 0-2  
+
+Week 2-3  Level 3 + 5.0-5.1  
+
+Week 4-5  Level 6 (desktop chat + memory browser)  
+
+Week 6    Level 7 (mobile PWA)  
+
+Week 7-8  Levels 8-10 + polish
+
+  
+
+────────────────────────
+
+That’s it — every line above is a ticket you can copy-paste into Linear with the parent/child links already encoded.  
+
+Start at the deepest leaf (0.0.1) and work upward; nothing unblocks until its children are merged.
+```

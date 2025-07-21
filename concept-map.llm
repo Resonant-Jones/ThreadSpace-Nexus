@@ -1,0 +1,300 @@
+```
+Below is a concrete architecture that turns the ThreadSpace vision into a working multi-agent platform.  
+
+
+  
+
+────────────────────────
+
+1. Macro-architecture
+
+────────────────────────
+
+┌────────────────────────────┐
+
+│          THREADSPACE CORE  │  (Rust + WASM)
+
+│  • Memory fabric           │
+
+│  • Agent orchestration     │
+
+│  • Privacy / crypto layer  │
+
+└────────────────────────────┘
+
+        ▲  ↕ WASM boundary
+
+        │  ▲
+
+┌───────┴──┴─────────────┐
+
+│  HOST RUNTIMES         │  (cross-compiled)
+
+│  • Desktop (Tauri)     │
+
+│  • iOS / Android       │
+
+│  • Browser (PWA)       │
+
+└────────────────────────┘
+
+        ▲
+
+        │  REST / gRPC
+
+┌───────┴───────────────┐
+
+│  OPTIONAL CLOUD       │
+
+│  • Encrypted backups  │
+
+│  • Federated relays   │
+
+└───────────────────────┘
+
+  
+
+All critical state (memories, codex, agent code) lives on-device; cloud is an encrypted mirror you can unplug.
+
+  
+
+────────────────────────
+
+2. Agent Topology
+
+────────────────────────
+
+We model every “capability” as an autonomous micro-agent that:
+
+1. owns a slice of the memory fabric,
+
+2. exposes a typed message interface (Cap’n Proto),
+
+3. is sandboxed in WASM.
+
+  
+
+Core agents (ship with alpha):
+
+•  Loom      – keeps the long-term memory vector index + embeddings
+
+•  Scribe   – captures & summarizes all user interactions
+
+•  Weaver  – maintains the Codex (graph + schema)
+
+•  Oracle   – runs lightweight “foresight” sims on Codex snapshots
+
+•  Artisan  – creative tooling (text, image, code, audio)
+
+•  Herald   – manages outbound integrations & automations
+
+•  Warden   – enforces privacy policy (zero-trust mediator)
+
+  
+
+Extension agents:
+
+•  written in any language → compiles to WASM
+
+•  signed manifest declares required capabilities + memory scopes
+
+•  Warden gate-keeps (user must approve)
+
+  
+
+────────────────────────
+
+3. Memory Fabric
+
+────────────────────────
+
+Three layers:
+
+  
+
+A. Ephemeral (RAM, 5-30 s)  
+
+  – Current conversation turn, UI state, etc.
+
+  
+
+B. Working (SQLite + Vector index)  
+
+  – Last N days of activity; compressed nightly.
+
+  
+
+C. Archive (append-only log)  
+
+  – WORM JSONL + chunked blobs (files, images)  
+
+  – Each record has: hash, timestamp, privacy label, optional ACL.
+
+  
+
+Encryption:
+
+•  Device key (Curve25519) encrypts archive at rest.  
+
+•  Each agent gets a capability key signed by Warden.  
+
+•  Optional “friend” devices use double-ratchet forward secrecy.
+
+  
+
+────────────────────────
+
+4. Codex Representation
+
+────────────────────────
+
+Weave a single knowledge graph:
+
+  
+
+Node types: Project, Concept, Person, Ritual, Artifact, Goal.  
+
+Edges: depends-on, inspired-by, composed-of, etc.  
+
+Storage: SQLite + GraphQL (async-graphql in Rust).  
+
+Versioning: every write is a new commit hash; Git-like DAG lets Oracle branch for “what-if” simulations.
+
+  
+
+────────────────────────
+
+5. UX Layer (Fluid Interface)
+
+────────────────────────
+
+•  Home is a zoomable “space” – pan, zoom, pinch.  
+
+•  “Threads” = temporal narratives you can replay.  
+
+•  “Ritual cards” sit in the periphery and glow softly when the model thinks they’re relevant (ambient UI).  
+
+•  All data is opt-in shareable; you drag a node to a “vault” icon to export encrypted.
+
+  
+
+────────────────────────
+
+6. Development Plan
+
+────────────────────────
+
+Week 0   – Kickoff repo + RFCs  
+
+Week 1-2 – Core runtime + WASM sandbox  
+
+Week 3-4 – Loom + Scribe + basic chat UI  
+
+Week 5-6 – Codex graph + Weaver agent  
+
+Week 7   – Oracle simulation mini-demo  
+
+Week 8   – Alpha cut + community invite
+
+  
+
+Tech stack:
+
+•  Runtime: Rust (tokio, wgpu for future 3D)  
+
+•  UI: SvelteKit → Tauri for desktop  
+
+•  WASM: wasmtime, wit-bindgen  
+
+•  Comms: capnp-rpc (schema-first, zero-copy)  
+
+•  Crypto: age-rs for file encryption, MLS for group sync.
+
+  
+
+────────────────────────
+
+7. Extensibility & Marketplace
+
+────────────────────────
+
+Agents declare:
+
+  
+
+```
+
+capabilities = ["llm", "http", "fs:write:~/Pictures"]
+
+memory_scope = ["project:design", "ritual:daily"]
+
+```
+
+  
+
+User installs via signed bundle (.tspace).  
+
+Warden shows a concise permission sheet (like iOS).  
+
+Revenue split: 70 % dev, 20 % sustainability pool, 10 % ThreadSpace DAO.
+
+  
+
+────────────────────────
+
+8. Governance & Sovereignty
+
+────────────────────────
+
+•  All source published under AGPL-3 + Commons Clause.  
+
+•  Core governance via opt-in DAO (token = non-transferable reputation).  
+
+•  User can fork the entire runtime, wipe cloud, and keep their data.
+
+  
+
+────────────────────────
+
+9. Security Hardening Checklist
+
+────────────────────────
+
+☐ All WASM modules compiled with –Z build-std=std,panic=abort  
+
+☐ Deterministic reproducible builds (Nix)  
+
+☐ Static analysis (cargo-audit, semgrep)  
+
+☐ Fuzz memory fabric with cargo-fuzz  
+
+☐ Red-team review of capability graph
+
+  
+
+────────────────────────
+
+10. Next Steps for You
+
+────────────────────────
+
+1. Spin up the repo skeleton:  
+
+   ```
+
+   cargo new --lib threadspace-core
+
+   cargo new --bin threadspace-desktop
+
+   ```
+
+  
+
+2. Draft the agent manifest schema (Cap’n Proto).  
+
+3. Build the smallest viable memory fabric (append-only log + vector index).  
+
+4. Run a 3-person dog-food sprint: one dev, one designer, one target user.
+
+  
+```

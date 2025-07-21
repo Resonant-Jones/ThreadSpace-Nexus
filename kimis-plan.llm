@@ -1,0 +1,188 @@
+Here’s the ruthless breakdown—exactly what makes Kimi’s architecture revolutionary, **why it matters**, and **where to start**:
+
+---
+
+## **🔥 What Makes Kimi’s Plan Revolutionary**
+
+  
+
+This isn’t just a better app—it’s a **new substrate for agency**, and it solves 5 unsolved problems at once:
+
+---
+
+### **1.** 
+
+### **Portable, Verifiable Identity for Agents**
+
+  
+
+Most apps treat identity as an account.
+
+Kimi flips this: identity becomes a **cryptographically signed object** (the CIO) that:
+
+- Is owned by _you_, not the server
+    
+- Can delegate access (like OAuth, but sovereign)
+    
+- Can follow you across devices, models, tools, and agents
+    
+
+  
+
+> 🧠 This unlocks **multi-model, multi-agent orchestration** with zero vendor lock-in. You become the center of the system.
+
+---
+
+### **2.** 
+
+### **Memory Is Not Just “Searchable Logs”**
+
+  
+
+Most AI apps log your chats. Kimi’s plan gives you a **layered, encrypted memory fabric**:
+
+- Ephemeral → for current state (RAM)
+    
+- Working → for recent conversations (SQLite + vector index)
+    
+- Archive → WORM log + blobs (versioned, encrypted)
+    
+
+  
+
+> 🔐 This lets your agents _remember_, _reason_, and _simulate futures_—without leaking context or needing to phone home.
+
+---
+
+### **3.** 
+
+### **Mesh of MCP Tools with Just-in-Time Consent**
+
+  
+
+You can add new capabilities (tools, integrations) like plugins—**but** each one:
+
+- Declares its scope and capabilities in a manifest
+    
+- Runs in a WASM sandbox
+    
+- Gets filtered through a Warden policy engine
+    
+
+  
+
+> 🛡️ This is a **zero-trust programmable OS layer** for AI agents. No app store BS. You approve what runs, when, and how.
+
+---
+
+### **4.** 
+
+### **Time-Aware Simulation (Oracle)**
+
+  
+
+The system doesn’t just react. You can fork the Codex, simulate what happens if you follow a path, and get foresight reports.
+
+  
+
+> This turns the assistant into a **mirror of will + consequence**, not just a to-do list.
+
+---
+
+### **5.** 
+
+### **Local-First Sovereignty**
+
+  
+
+Every part of the system runs **on-device**, backed up optionally with **encrypted federated relays**.
+
+  
+
+> 💾 You own your memory. You own your identity. You don’t need OpenAI, Google, or even the ThreadSpace cloud.
+
+---
+
+## **🧭 Where To Start: Ruthless Order of Operations**
+
+  
+
+### **STEP 1: Create the Runtime Skeleton**
+
+  
+
+✅ You’ve already started with threadspace/ (Rust + WASM + Tauri)
+
+---
+
+### **STEP 2: Build the MCP Agent Bridge Layer**
+
+  
+
+This is what will connect your existing Python tools (Codexify, Ritual Engine) into the Kimi mesh.
+
+  
+
+> 🔥 HOTBOX this first:
+
+> **“Build a Rust bridge layer that lets agents call CLI tools via JSON-RPC and return typed results to the host runtime.”**
+
+  
+
+Let me scaffold this now if you want.
+
+---
+
+### **STEP 3: Codify the CIO (Canonical Identity Object)**
+
+  
+
+Write the first cio.json:
+
+```
+{
+  "@context": "https://schema.org",
+  "@type": "Persona",
+  "id": "did:web:you.threadspace.local",
+  "name": "Riven",
+  "memoryPointer": "rag://loom/memory",
+  "capabilities": ["mcp://codex", "mcp://ritual_engine"],
+  "policy": "file://warden/policy.md"
+}
+```
+
+This becomes the **central source of truth** for your agents, your memory, and your identity.
+
+---
+
+### **STEP 4: Launch One Agent (Codex or Scribe)**
+
+  
+
+Wrap one real agent—either:
+
+- scribe-agent: listens to chat, summarizes, emits memory events
+    
+- codex-agent: reads/writes Codex fragments from Python
+    
+
+  
+
+Hook it into the bridge and expose its capability via manifest.
+
+---
+
+### **STEP 5: Wire Into the UI (Tauri + SvelteKit)**
+
+  
+
+Once one agent is alive, give it a face.
+
+- Chat interface
+    
+- Memory lookup
+    
+- Agent activity log
+    
+
+  

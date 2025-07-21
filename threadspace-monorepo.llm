@@ -1,0 +1,898 @@
+```────────────────────────
+
+ROOT (`threadspace/`)
+
+────────────────────────
+
+.
+
+├── .github/workflows/ci.yml
+
+├── .gitignore
+
+├── Cargo.toml
+
+├── flake.nix
+
+├── justfile
+
+├── Cargo.lock
+
+├── crates
+
+│   ├── memory
+
+│   ├── runtime
+
+│   └── identity
+
+├── agents
+
+│   ├── loom
+
+│   └── scribe
+
+├── schemas
+
+│   ├── envelope.capnp
+
+│   └── agent_manifest.capnp
+
+├── apps
+
+│   └── desktop
+
+│       ├── src-tauri
+
+│       └── src
+
+└── docs
+
+  
+
+────────────────────────
+
+1. Top-level files
+
+────────────────────────
+
+.github/workflows/ci.yml
+
+```
+
+name: CI
+
+on:
+
+  push:
+
+    branches: [main]
+
+  pull_request:
+
+  
+
+jobs:
+
+  check:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@v9
+
+      - run: nix develop --command just check
+
+```
+
+  
+
+.gitignore
+
+```
+
+# Rust
+
+/target
+
+Cargo.lock
+
+# Node / Tauri
+
+node_modules/
+
+dist/
+
+*.tsbuildinfo
+
+# Nix
+
+.direnv
+
+```
+
+  
+
+Cargo.toml
+
+```
+
+[workspace]
+
+resolver = "2"
+
+members = [
+
+  "crates/memory",
+
+  "crates/runtime",
+
+  "crates/identity",
+
+  "agents/loom",
+
+  "agents/scribe",
+
+  "apps/desktop/src-tauri",
+
+]
+
+```
+
+  
+
+flake.nix
+
+```nix
+
+{
+
+  description = "ThreadSpace dev shell";
+
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+  inputs.fenix.url = "github:nix-community/fenix";
+
+  inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
+
+  
+
+  outputs = { self, nixpkgs, fenix }:
+
+    let
+
+      system = "x86_64-linux";
+
+      pkgs = nixpkgs.legacyPackages.${system};
+
+      rust = fenix.packages.${system}.stable;
+
+      node = pkgs.nodejs_20;
+
+    in
+
+    {
+
+      devShells.${system}.default = pkgs.mkShell {
+
+        buildInputs = with pkgs; [
+
+          just
+
+          pkg-config
+
+          openssl
+
+          sqlite
+
+          capnproto
+
+          node
+
+          rust
+
+        ];
+
+        shellHook = ''
+
+          export RUST_LOG=debug
+
+        '';
+
+      };
+
+    };
+
+}
+
+```
+
+  
+
+justfile
+
+```
+
+# List commands
+
+default:
+
+    @just --list
+
+  
+
+# Install deps once
+
+bootstrap:
+
+    npm --prefix apps/desktop install
+
+  
+
+# Hot-reload desktop
+
+dev:
+
+    npm --prefix apps/desktop run tauri dev
+
+  
+
+# Lint & test everything
+
+check:
+
+    cargo fmt --all --check
+
+    cargo clippy --workspace --all-targets -- -D warnings
+
+    cargo test --workspace
+
+```
+
+  
+
+────────────────────────
+
+2. crates/memory
+
+────────────────────────
+
+crates/memory/src/lib.rs
+
+```rust
+
+use rusqlite::{Connection, params};
+
+use serde::{Deserialize, Serialize};
+
+  
+
+#[derive(Serialize, Deserialize, Debug)]
+
+pub struct Record {
+
+    pub id: String,
+
+    pub data: String,
+
+}
+
+  
+
+pub struct Memory {
+
+    conn: Connection,
+
+}
+
+  
+
+impl Memory {
+
+    pub fn new(path: &str) -> anyhow::Result<Self> {
+
+        let conn = Connection::open(path)?;
+
+        conn.execute(
+
+            "CREATE TABLE IF NOT EXISTS memory (
+
+                id   TEXT PRIMARY KEY,
+
+                data TEXT NOT NULL
+
+            )",
+
+            [],
+
+        )?;
+
+        Ok(Self { conn })
+
+    }
+
+  
+
+    pub fn put(&self, rec: &Record) -> anyhow::Result<()> {
+
+        self.conn.execute(
+
+            "INSERT OR REPLACE INTO memory(id, data) VALUES (?1, ?2)",
+
+            params![rec.id, rec.data],
+
+        )?;
+
+        Ok(())
+
+    }
+
+  
+
+    pub fn get(&self, id: &str) -> anyhow::Result<Option<Record>> {
+
+        let mut stmt = self.conn.prepare("SELECT id, data FROM memory WHERE id = ?1")?;
+
+        let mut rows = stmt.query_map([id], |row| {
+
+            Ok(Record {
+
+                id: row.get(0)?,
+
+                data: row.get(1)?,
+
+            })
+
+        })?;
+
+        Ok(rows.next().transpose()?)
+
+    }
+
+}
+
+```
+
+  
+
+crates/memory/Cargo.toml
+
+```
+
+[package]
+
+name = "threadspace-memory"
+
+version = "0.1.0"
+
+edition = "2021"
+
+  
+
+[dependencies]
+
+anyhow = "1"
+
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+serde = { version = "1", features = ["derive"] }
+
+```
+
+  
+
+────────────────────────
+
+3. crates/runtime (stub)
+
+────────────────────────
+
+crates/runtime/src/lib.rs
+
+```rust
+
+pub fn add(left: u64, right: u64) -> u64 {
+
+    left + right
+
+}
+
+  
+
+#[cfg(test)]
+
+mod tests {
+
+    use super::*;
+
+  
+
+    #[test]
+
+    fn it_adds() {
+
+        assert_eq!(add(2, 2), 4);
+
+    }
+
+}
+
+```
+
+  
+
+crates/runtime/Cargo.toml
+
+```
+
+[package]
+
+name = "threadspace-runtime"
+
+version = "0.1.0"
+
+edition = "2021"
+
+```
+
+  
+
+────────────────────────
+
+4. crates/identity (stub)
+
+────────────────────────
+
+Same pattern as runtime for now — empty lib with tests.
+
+  
+
+────────────────────────
+
+5. agents/loom
+
+────────────────────────
+
+agents/loom/Cargo.toml
+
+```
+
+[package]
+
+name = "loom-agent"
+
+version = "0.1.0"
+
+edition = "2021"
+
+  
+
+[lib]
+
+crate-type = ["cdylib"]
+
+  
+
+[dependencies]
+
+wit-bindgen = "0.24"
+
+```
+
+  
+
+agents/loom/src/lib.rs
+
+```rust
+
+wit_bindgen::generate!({
+
+    world: "loom",
+
+    exports: {
+
+        world: Component,
+
+    },
+
+});
+
+  
+
+struct Component;
+
+  
+
+impl exports::loom::Guest for Component {
+
+    fn ping() -> String {
+
+        "pong from loom".into()
+
+    }
+
+}
+
+```
+
+  
+
+agents/scribe mirrors loom for now.
+
+  
+
+────────────────────────
+
+6. schemas
+
+────────────────────────
+
+schemas/envelope.capnp
+
+```
+
+@0xbf5147cbb26140e1;
+
+  
+
+struct Envelope {
+
+  id @0 :Text;
+
+  timestamp @1 :UInt64;
+
+  payload @2 :Data;
+
+}
+
+```
+
+  
+
+schemas/agent_manifest.capnp
+
+```
+
+@0x8a5c5d7c3e3f4b0a;
+
+  
+
+struct Manifest {
+
+  name @0 :Text;
+
+  version @1 :Text;
+
+  capabilities @2 :List(Text);
+
+  memoryScopes @3 :List(Text);
+
+}
+
+```
+
+  
+
+────────────────────────
+
+7. apps/desktop (Tauri + SvelteKit)
+
+────────────────────────
+
+apps/desktop/package.json
+
+```json
+
+{
+
+  "name": "@threadspace/desktop",
+
+  "type": "module",
+
+  "scripts": {
+
+    "dev": "vite dev",
+
+    "build": "vite build",
+
+    "preview": "vite preview",
+
+    "tauri": "tauri"
+
+  },
+
+  "devDependencies": {
+
+    "@tauri-apps/cli": "^1.5",
+
+    "@sveltejs/vite-plugin-svelte": "^3.0",
+
+    "svelte": "^4.2",
+
+    "tailwindcss": "^3.4",
+
+    "vite": "^5.0"
+
+  }
+
+}
+
+```
+
+  
+
+apps/desktop/src-tauri/Cargo.toml
+
+```
+
+[package]
+
+name = "threadspace-desktop"
+
+version = "0.1.0"
+
+edition = "2021"
+
+  
+
+[build-dependencies]
+
+tauri-build = { version = "1.5", features = [] }
+
+  
+
+[dependencies]
+
+tauri = { version = "1.6", features = ["api-all"] }
+
+threadspace-memory = { path = "../../crates/memory" }
+
+serde = { version = "1", features = ["derive"] }
+
+serde_json = "1"
+
+tokio = { version = "1", features = ["full"] }
+
+```
+
+  
+
+apps/desktop/src-tauri/src/main.rs
+
+```rust
+
+use threadspace_memory::Memory;
+
+use tauri::State;
+
+  
+
+struct AppState {
+
+    memory: Memory,
+
+}
+
+  
+
+#[tauri::command]
+
+async fn query_memory(id: String, state: State<'_, AppState>) -> Result<Option<String>, String> {
+
+    state
+
+        .memory
+
+        .get(&id)
+
+        .map(|r| r.map(|rec| rec.data))
+
+        .map_err(|e| e.to_string())
+
+}
+
+  
+
+fn main() {
+
+    let memory = Memory::new("threadspace.db").expect("open memory");
+
+    tauri::Builder::default()
+
+        .manage(AppState { memory })
+
+        .invoke_handler(tauri::generate_handler![query_memory])
+
+        .run(tauri::generate_context!())
+
+        .expect("error while running tauri");
+
+}
+
+```
+
+  
+
+apps/desktop/vite.config.js
+
+```js
+
+import { defineConfig } from 'vite';
+
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+  
+
+export default defineConfig({
+
+  plugins: [svelte()],
+
+  clearScreen: false,
+
+  server: {
+
+    port: 1420,
+
+    strictPort: true,
+
+  },
+
+});
+
+```
+
+  
+
+apps/desktop/src/App.svelte
+
+```svelte
+
+<script>
+
+  import { invoke } from '@tauri-apps/api/tauri';
+
+  let id = '';
+
+  let result = '';
+
+  
+
+  async function load() {
+
+    result = await invoke('query_memory', { id });
+
+  }
+
+</script>
+
+  
+
+<main class="p-8">
+
+  <h1 class="text-2xl font-bold">ThreadSpace α</h1>
+
+  <input bind:value={id} placeholder="memory id" class="input input-bordered" />
+
+  <button on:click={load} class="btn btn-primary ml-2">load</button>
+
+  <pre class="mt-4">{JSON.stringify(result)}</pre>
+
+</main>
+
+```
+
+  
+
+apps/desktop/tailwind.config.js
+
+```js
+
+export default {
+
+  content: ['./index.html', './src/**/*.{svelte,js,ts,jsx,tsx}'],
+
+  theme: { extend: {} },
+
+  plugins: [],
+
+};
+
+```
+
+  
+
+apps/desktop/src/app.css
+
+```css
+
+@tailwind base;
+
+@tailwind components;
+
+@tailwind utilities;
+
+```
+
+  
+
+────────────────────────
+
+8. docs/README.md
+
+────────────────────────
+
+```md
+
+# ThreadSpace
+
+  
+
+Bootstrap:
+
+  
+
+```bash
+
+nix develop
+
+just bootstrap
+
+just dev
+
+```
+
+  
+
+Happy hacking.
+
+```
+
+  
+
+────────────────────────
+
+GitHub Template (optional)
+
+────────────────────────
+
+Instead of copy-paste, run once:
+
+  
+
+```
+
+gh repo create threadspace --template \
+
+  --public \
+
+  --description "Sovereign personal AI companion"
+
+git clone https://github.com/<you>/threadspace
+
+cd threadspace
+
+nix develop
+
+just dev
+
+```
+
+  
+
+You now have a live desktop app that:
+
+• compiles Rust workspace  
+
+• spins up Tauri with SvelteKit UI  
+
+• opens an SQLite-backed memory store  
+
+• exposes a “ping” WASM agent stub
+
+  
+
+From here, grow the tree: plug in Loom, Scribe, Codex, etc.
+```

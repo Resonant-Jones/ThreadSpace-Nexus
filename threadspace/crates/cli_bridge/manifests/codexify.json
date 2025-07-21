@@ -1,0 +1,44 @@
+{
+  "name": "codexify",
+  "version": "1.0.0",
+  "description": "Converts local files and memory logs into structured knowledge graph entries",
+  "language": "python",
+  "entry_point": "python/guardian-backend_v2/json_gateway.py",
+  "capabilities": [
+    "fs:read",
+    "fs:write",
+    "memory:index",
+    "llm"
+  ],
+  "schema": "schemas/codexify.json",
+  "timeout_sec": 60,
+  "requirements": {
+    "python": ">=3.10",
+    "openai": "*",
+    "chromadb": "*",
+    "tiktoken": "*"
+  },
+  "inputs": {
+    "file_path": {
+      "type": "string",
+      "description": "Path to the file or folder to codexify",
+      "required": true
+    },
+    "tags": {
+      "type": "array",
+      "description": "Optional tags to associate with this node",
+      "required": false,
+      "default": []
+    }
+  },
+  "outputs": {
+    "node_id": {
+      "type": "string",
+      "description": "ID of the created or updated Codex node"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Summary of the codified input"
+    }
+  }
+}

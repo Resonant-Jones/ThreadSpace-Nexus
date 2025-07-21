@@ -1,0 +1,50 @@
+{
+  "name": "ritual_engine",
+  "version": "1.0.0",
+  "description": "Executes memory and ritual operations for ThreadSpace",
+  "language": "python",
+  "entry_point": "guardian-backend_v2/ritual_engine/main.py",
+  "capabilities": [
+    "memory:process",
+    "ritual:execute",
+    "sync:memory"
+  ],
+  "schema": "schemas/ritual_engine.json",
+  "timeout_sec": 120,
+  "requirements": {
+    "python": ">=3.10",
+    "requests": "*",
+    "pyyaml": "*"
+  },
+  "inputs": {
+    "ritual_type": {
+      "type": "string",
+      "description": "Type of ritual to perform",
+      "required": true
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Parameters for the ritual",
+      "required": true
+    },
+    "context": {
+      "type": "string",
+      "description": "Context for the ritual execution",
+      "required": false
+    }
+  },
+  "outputs": {
+    "ritual_id": {
+      "type": "string",
+      "description": "ID of the created ritual"
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the ritual execution"
+    },
+    "result": {
+      "type": "object",
+      "description": "Result data from the ritual"
+    }
+  }
+}

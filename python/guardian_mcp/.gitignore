@@ -1,0 +1,49 @@
+# This file silences the parts of the system that do not carry meaning.
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+# Ignore all env files except .env.example (for secrets safety)
+venv/
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.tox/
+.nox/
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.code-workspace
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Database / temp files
+*.sqlite3
+*.db
+*.bak
+guardian-token.md
+node_modules
+build/
+dist/
+*.egg-info/
+
+# Sourcegraph local deployment
+# Sourcegraph local deployment
+dev_tools/deploy-sourcegraph-docker/

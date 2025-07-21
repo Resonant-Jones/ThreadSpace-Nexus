@@ -1,0 +1,67 @@
+[project]
+name = "guardian_codex"
+version = "0.1.0"
+description = "PulseOS Guardian Backend"
+authors = [
+    { name="Catalyst Design Labs", email="dev@catalystlabs.ai" }
+]
+dependencies = [
+    "fastapi",
+    "httpx",
+    "python-dotenv",
+    "uvicorn",
+    "PyYAML",
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "pytest",
+    "pytest-asyncio",
+    "mcp",
+    "notion-client",
+    "markitdown",
+]
+
+[project.scripts]
+guardian = "guardian.cli.plugin_cli:main"
+
+[tool.setuptools.packages.find]
+include = ["guardian", "memoryos"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+(
+  \.git
+  | \.venv
+  | build
+  | dist
+  | guardian\.egg-info
+  | migrations
+  | .*_pb2\.py
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["guardian"]
+skip = [
+  ".venv",
+  "build",
+  "dist",
+  "guardian.egg-info",
+  "migrations"
+]
+
+[tool.pytest.ini_options]
+markers = ["asyncio"]
+
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
